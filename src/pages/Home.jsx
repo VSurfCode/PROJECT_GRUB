@@ -51,7 +51,7 @@ function Home() {
           width: { xs: 0, sm: 200 },
           bgcolor: "#2a2e33",
           p: 2,
-          pt: 0,
+          pt: 3,
           color: "#ffffff",
           borderRight: "3px solid rgb(61, 246, 14)",
           display: { xs: "none", sm: "block" },
