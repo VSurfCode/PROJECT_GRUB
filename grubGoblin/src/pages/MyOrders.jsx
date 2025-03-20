@@ -1,28 +1,60 @@
+import { useMemo } from "react";
 import useOrders from "../hooks/useOrders";
 import useMeals from "../hooks/useMeals";
 import { useAuth } from "../context/AuthContext";
+import { Typography, Box, Card, CardContent, CircularProgress } from "@mui/material";
 
 function MyOrders() {
   const { user } = useAuth();
-  const orders = useOrders(user.uid);
-  const mealIds = orders.map((order) => order.mealId);
-  const meals = useMeals(mealIds);
+  const { orders, error: ordersError } = useOrders(user.uid);
+  const mealIds = useMemo(() => orders.map((order) => order.mealId), [orders]);
+  const { meals, loading: mealsLoading, error: mealsError } = useMeals(mealIds);
+
+  if (ordersError) {
+    return <Typography color="error" sx={{ p: 3 }}>Error loading orders: {ordersError}</Typography>;
+  }
+  if (mealsError) {
+    return <Typography color="error" sx={{ p: 3 }}>Error loading meals: {mealsError}</Typography>;
+  }
+  if (mealsLoading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", bgcolor: "background.default" }}>
+        <CircularProgress color="secondary" />
+      </Box>
+    );
+  }
 
   return (
-    <div>
-      <h1>My Orders</h1>
-      {orders.map((order) => {
-        const meal = meals.find((m) => m.id === order.mealId);
-        return (
-          <div key={order.id}>
-            <h3>{meal?.name || "Loading..."}</h3>
-            <p>Meal Type: {order.mealType}</p>
-            <p>Add-ons: {order.addOns.join(", ") || "None"}</p>
-            <p>Time: {order.timestamp?.toDate().toLocaleString()}</p>
-          </div>
-        );
-      })}
-    </div>
+    <Box sx={{ p: 3, bgcolor: "background.default" }}>
+      <Typography variant="h4" gutterBottom color="primary">
+        My Orders
+      </Typography>
+      {orders.length === 0 ? (
+        <Typography>No orders yet.</Typography>
+      ) : (
+        orders.map((order) => {
+          const meal = meals.find((m) => m.id === order.mealId);
+          return (
+            <Card key={order.id} sx={{ mb: 2 }}>
+              <CardContent>
+                <Typography variant="h6">
+                  {meal?.name || "Loading..."}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Meal Type: {order.mealType}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Add-ons: {order.addOns.join(", ") || "None"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Time: {order.timestamp?.toDate().toLocaleString() || "N/A"}
+                </Typography>
+              </CardContent>
+            </Card>
+          );
+        })
+      )}
+    </Box>
   );
 }
 

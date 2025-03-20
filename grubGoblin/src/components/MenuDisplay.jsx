@@ -1,18 +1,31 @@
 import useMeals from "../hooks/useMeals";
 import MealItem from "./MealItem";
+import { Typography, Box, CircularProgress } from "@mui/material";
 
 function MenuDisplay({ mealType, mealIds }) {
-  const meals = useMeals(mealIds);
+  const { meals, loading } = useMeals(mealIds);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+        <CircularProgress color="secondary" />
+      </Box>
+    );
+  }
 
   return (
-    <div>
-      <h2>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</h2>
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h5" gutterBottom color="text.primary">
+        {mealType.charAt(0).toUpperCase() + mealType.slice(1)} Time!
+      </Typography>
       {meals.length === 0 ? (
-        <p>No meals available.</p>
+        <Typography color="text.primary">No yummy meals yet!</Typography>
       ) : (
-        meals.map((meal) => <MealItem key={meal.id} meal={meal} mealType={mealType} />)
+        meals.map((meal) => (
+          <MealItem key={meal.id} meal={meal} mealType={mealType} />
+        ))
       )}
-    </div>
+    </Box>
   );
 }
 

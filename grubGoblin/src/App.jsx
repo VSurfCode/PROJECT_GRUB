@@ -4,10 +4,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/layout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup"; // New import
-import PlaceOrder from "./pages/PlaceOrder";
+import Signup from "./pages/Signup";
 import MyOrders from "./pages/MyOrders";
 import Suggestions from "./pages/Suggestions";
+import Profile from "./pages/Profile";
 import MealManagement from "./pages/Admin/MealManagement";
 import MenuManagement from "./pages/Admin/MenuManagement";
 import AdminOrders from "./pages/Admin/Orders";
@@ -20,11 +20,11 @@ function App() {
         <Layout>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} /> {/* New route */}
+            <Route path="/signup" element={<Signup />} />
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/place-order" element={<ProtectedRoute><PlaceOrder /></ProtectedRoute>} />
             <Route path="/my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
             <Route path="/suggestions" element={<ProtectedRoute><Suggestions /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} /> {/* Add Profile route */}
             <Route path="/admin/meals" element={<ProtectedRoute requireAdmin><MealManagement /></ProtectedRoute>} />
             <Route path="/admin/menu" element={<ProtectedRoute requireAdmin><MenuManagement /></ProtectedRoute>} />
             <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />

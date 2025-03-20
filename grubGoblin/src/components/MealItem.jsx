@@ -1,10 +1,18 @@
+import { Typography, Card, CardContent } from "@mui/material";
+
 function MealItem({ meal }) {
-    return (
-      <div>
-        <h3>{meal.name}</h3>
-        <p>{meal.description}</p>
-      </div>
-    );
-  }
-  
-  export default MealItem;
+  return (
+    <Card sx={{ mb: 2, bgcolor: "#ffffff" }}>
+      <CardContent>
+        <Typography variant="h6" color="text.primary">
+          {meal.name}
+        </Typography>
+        <Typography variant="body2" color="text.primary">
+          {meal.description}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default MealItem;

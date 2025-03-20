@@ -2,52 +2,50 @@ import { useState, useEffect } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 
-function useMeals(mealIds) {
-  const [meals, setMeals] = useState([]);
+function useUsers(userIds) {
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log("useMeals - mealIds:", mealIds);
-    if (!mealIds || mealIds.length === 0) {
-      setMeals([]);
+    if (!userIds || userIds.length === 0) {
+      setUsers([]);
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    // Batch mealIds into groups of 10 (Firestore "in" query limit)
     const batchSize = 10;
     const batches = [];
-    for (let i = 0; i < mealIds.length; i += batchSize) {
-      batches.push(mealIds.slice(i, i + batchSize));
+    for (let i = 0; i < userIds.length; i += batchSize) {
+      batches.push(userIds.slice(i, i + batchSize));
     }
 
     const unsubscribes = [];
     Promise.all(
       batches.map((batch) => {
-        const q = query(collection(db, "meals"), where("__name__", "in", batch));
+        const q = query(collection(db, "users"), where("__name__", "in", batch));
         return new Promise((resolve) => {
           const unsubscribe = onSnapshot(
             q,
             (snapshot) => {
-              const mealsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-              setMeals((prev) => {
-                const newMeals = [...prev];
-                mealsData.forEach((meal) => {
-                  const index = newMeals.findIndex((m) => m.id === meal.id);
+              const usersData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+              setUsers((prev) => {
+                const newUsers = [...prev];
+                usersData.forEach((user) => {
+                  const index = newUsers.findIndex((u) => u.id === user.id);
                   if (index === -1) {
-                    newMeals.push(meal);
+                    newUsers.push(user);
                   } else {
-                    newMeals[index] = meal;
+                    newUsers[index] = user;
                   }
                 });
-                return newMeals;
+                return newUsers;
               });
               resolve();
             },
             (err) => {
-              console.error("useMeals - Error:", err);
+              console.error("useUsers - Error:", err);
               setError(err.message);
               resolve();
             }
@@ -58,9 +56,9 @@ function useMeals(mealIds) {
     ).finally(() => setLoading(false));
 
     return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
-  }, [mealIds]);
+  }, [userIds]);
 
-  return { meals, loading, error };
+  return { users, loading, error };
 }
 
-export default useMeals;
+export default useUsers;

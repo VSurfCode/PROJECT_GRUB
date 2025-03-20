@@ -1,23 +1,34 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 
 function useOrders(userId) {
   const [orders, setOrders] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
+    let q;
     if (userId) {
-      q = query(collection(db, "orders"), where("userId", "==", userId), orderBy("timestamp", "desc"));
+      q = query(collection(db, "orders"), where("userId", "==", userId));
+    } else {
+      q = query(collection(db, "orders"));
     }
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ordersData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setOrders(ordersData);
-    });
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const ordersData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setOrders(ordersData);
+      },
+      (err) => {
+        console.error("useOrders - Error:", err);
+        setError(err.message);
+      }
+    );
     return () => unsubscribe();
   }, [userId]);
 
-  return orders;
+  return { orders, error };
 }
 
 export default useOrders;
