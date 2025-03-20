@@ -8,10 +8,12 @@ import GrubGoblinLogo from '../assets/GrubGoblinLogo2.png'
             </Box>
 
 
-const firebaseConfig = {
-    // Replace with your Firebase project config from the console
-    apiKey: "AIzaSyDakJJRhI-3eNXkPoRfxI6UuEiqczxzxCY",
-    authDomain: "projectgrub-b58cf.firebaseapp.com",
-    projectId: "projectgrub-b58cf",
-    // ... other config fields
-  };
+  <Box
+        sx={{
+          width: 200,
+          bgcolor: "#2a2e33",
+          p: 2,
+          color: "#ffffff",
+          borderRight: "3px solid rgb(61, 246, 14)",
+        }}
+      ></Box>
