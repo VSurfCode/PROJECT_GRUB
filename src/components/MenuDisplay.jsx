@@ -15,11 +15,11 @@ function MenuDisplay({ mealType, mealIds }) {
 
   return (
     <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" gutterBottom color="text.primary">
+      <Typography variant="h5" gutterBottom color="text.secondary">
         {mealType.charAt(0).toUpperCase() + mealType.slice(1)} Time!
       </Typography>
       {meals.length === 0 ? (
-        <Typography color="text.primary">No yummy meals yet!</Typography>
+        <Typography color="text.secondary">No yummy meals yet!</Typography>
       ) : (
         meals.map((meal) => (
           <MealItem key={meal.id} meal={meal} mealType={mealType} />

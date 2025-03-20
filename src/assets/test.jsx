@@ -16,4 +16,4 @@ import GrubGoblinLogo from '../assets/GrubGoblinLogo2.png'
           color: "#ffffff",
           borderRight: "3px solid rgb(61, 246, 14)",
         }}
-      ></Box>
+      >

@@ -146,11 +146,11 @@ function Home() {
           Hey {user?.displayName || "Friend"}! Let’s Eat! 🎉
         </Typography>
 
-        <Typography variant="h4" gutterBottom color="primary">
+        <Typography variant="h4" gutterBottom color="text.secondary">
           {mealType.charAt(0).toUpperCase() + mealType.slice(1)} Time!
         </Typography>
         {meals.length === 0 ? (
-          <Typography color="secondary">No yummy meals yet!</Typography>
+          <Typography color="text.secondary">No yummy meals yet!</Typography>
         ) : (
           <Grid container spacing={3}>
             {meals.map((meal) => (
