@@ -96,7 +96,7 @@ function MealManagement() {
   };
 
   return (
-    <Box sx={{ p: 3, bgcolor: "background.default" }}>
+    <Box sx={{ px: 3, bgcolor: "background.default" }}>
       <Typography variant="h4" gutterBottom color="primary">
         Manage Meals
       </Typography>
