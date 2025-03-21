@@ -1,8 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import useCurrentMenu from "../hooks/useCurrentMenu";
 import useMeals from "../hooks/useMeals";
+import useCondiments from "../hooks/useCondiments"; // Import the new useCondiments hook
 import { useAuth } from "../context/AuthContext";
+import { useBag } from "../context/BagContext";
 import OrderForm from "../components/OrderForm";
+import BeverageOrderForm from "../components/BeverageOrderForm";
+import Bag from "../components/Bag";
 import {
   Box,
   Button,
@@ -30,15 +34,48 @@ const bounce = keyframes`
 function Home() {
   const [mealType, setMealType] = useState("breakfast");
   const [selectedMeal, setSelectedMeal] = useState(null);
+  const [selectedBeverage, setSelectedBeverage] = useState(null);
+  const [bagOpen, setBagOpen] = useState(false);
   const { user } = useAuth();
+  const { bag, setBag } = useBag();
   const menu = useCurrentMenu();
-  const mealIds = useMemo(() => (menu ? menu[mealType] : []), [menu, mealType]);
-  const { meals, loading } = useMeals(mealIds);
+  const mealIds = useMemo(() => {
+    const ids = menu ? menu[mealType] || [] : [];
+    console.log(`Meal IDs for ${mealType}:`, ids);
+    return ids;
+  }, [menu, mealType]);
+  const { meals, loading: mealsLoading, error: mealsError } = useMeals(mealIds);
+  const { condiments, loading: condimentsLoading, error: condimentsError } = useCondiments(); // Fetch global condiments
 
-  if (loading || !menu) {
+  useEffect(() => {
+    console.log(`Meals for ${mealType}:`, meals);
+  }, [meals, mealType]);
+
+  const handleAddToBag = (bagItem) => {
+    setBag((prev) => [...prev, bagItem]);
+  };
+
+  // Handle loading and error states for both meals and condiments
+  if (mealsLoading || condimentsLoading || !menu) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", bgcolor: "background.default" }}>
         <CircularProgress color="secondary" />
+      </Box>
+    );
+  }
+
+  if (mealsError) {
+    return (
+      <Box sx={{ p: 3, bgcolor: "background.default" }}>
+        <Typography color="error">Error loading meals: {mealsError}</Typography>
+      </Box>
+    );
+  }
+
+  if (condimentsError) {
+    return (
+      <Box sx={{ p: 3, bgcolor: "background.default" }}>
+        <Typography color="error">Error loading condiments: {condimentsError}</Typography>
       </Box>
     );
   }
@@ -48,7 +85,7 @@ function Home() {
       {/* Sidebar for larger screens */}
       <Box
         sx={{
-          width: { xs: 0, sm: 200 },
+          maxWidth: 200,
           bgcolor: "#2a2e33",
           p: 2,
           pt: 3,
@@ -57,10 +94,10 @@ function Home() {
           display: { xs: "none", sm: "block" },
         }}
       >
-        <Typography variant="h5" gutterBottom color="primary">
+        <Typography variant="h5" gutterBottom color="#fff">
           Meal Times
         </Typography>
-        {["breakfast", "lunch", "dinner"].map((type) => (
+        {["breakfast", "lunch", "dinner", "beverages"].map((type) => (
           <Button
             key={type}
             onClick={() => setMealType(type)}
@@ -87,7 +124,7 @@ function Home() {
       <Box
         sx={{
           flexGrow: 1,
-          ml: { xs: 0, sm: "200px" },
+          ml: { xs: 0 },
           p: 3,
           bgcolor: "background.default",
         }}
@@ -96,15 +133,15 @@ function Home() {
         <Box
           sx={{
             display: { xs: "flex", sm: "none" },
-            justifyContent: "center", // Center the buttons
-            bgcolor: "#2a2e33", // Dark background to match sidebar
-            p: 1, // Padding around the buttons
+            justifyContent: "center",
+            bgcolor: "#2a2e33",
+            p: 1,
             mb: 2,
-            gap: 1.5, // Space between buttons
-            borderRadius: 1, // Rounded corners for the container
+            gap: 1.5,
+            borderRadius: 1,
           }}
         >
-          {["breakfast", "lunch", "dinner"].map((type) => (
+          {["breakfast", "lunch", "dinner", "beverages"].map((type) => (
             <Button
               key={type}
               onClick={() => setMealType(type)}
@@ -129,33 +166,35 @@ function Home() {
           ))}
         </Box>
 
-        <Typography
-          variant="h4"
-          gutterBottom
-          color="primary"
-          sx={{
-            animation: `${bounce} 2s infinite`,
-            textAlign: "center",
-            fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Arial', sans-serif",
-            background: "linear-gradient(45deg, #0fff50, #ffc523)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            mb: 4,
-          }}
-        >
-          Hey {user?.displayName || "Friend"}! Let’s Eat! 🎉
-        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography
+            variant="h4"
+            gutterBottom
+            color="primary"
+            sx={{
+              animation: `${bounce} 2s infinite`,
+              textAlign: "center",
+              fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Arial', sans-serif",
+              background: "linear-gradient(45deg, #0fff50, #ffc523)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 4,
+            }}
+          >
+            Hey {user?.displayName || "Friend"}! Let’s Eat! 🎉
+          </Typography>
+        </Box>
 
         <Typography variant="h4" gutterBottom color="text.secondary">
           {mealType.charAt(0).toUpperCase() + mealType.slice(1)} Time!
         </Typography>
         {meals.length === 0 ? (
-          <Typography color="text.secondary">No yummy meals yet!</Typography>
+          <Typography color="text.secondary">No yummy items yet!</Typography>
         ) : (
           <Grid container spacing={3}>
             {meals.map((meal) => (
-              <Grid item xs={12} sm={6} md={4} key={meal.id}>
-                <Card sx={{ bgcolor: "#ffffff", cursor: "pointer", transition: "transform 0.2s", "&:hover": { transform: "scale(1.05)" } }}>
+              <Grid item xs={12} md={6} lg={4} key={meal.id}>
+                <Card sx={{ bgcolor: "#ffffff", cursor: "pointer", transition: "transform 0.2s", minHeight: "380px", display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: 'center', "&:hover": { transform: "scale(1.05)" } }}>
                   <CardMedia
                     component="img"
                     height="140"
@@ -165,10 +204,10 @@ function Home() {
                     sx={{ objectFit: "cover" }}
                   />
                   <CardContent>
-                    <Typography variant="h6" color="primary">
+                    <Typography variant="h6" color="text.primary" sx={{justifySelf: 'flex-start'}}>
                       {meal.name}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{p:3}}>
                       {meal.description || "A yummy treat!"}
                     </Typography>
                     <Button
@@ -176,9 +215,13 @@ function Home() {
                       color="primary"
                       fullWidth
                       sx={{ mt: 2 }}
-                      onClick={() => setSelectedMeal(meal)}
+                      onClick={() =>
+                        meal.category === "beverage"
+                          ? setSelectedBeverage(meal)
+                          : setSelectedMeal(meal)
+                      }
                     >
-                      Order Now!
+                      Add to Bag
                     </Button>
                   </CardContent>
                 </Card>
@@ -192,9 +235,28 @@ function Home() {
         <OrderForm
           meal={selectedMeal}
           mealType={mealType}
+          condiments={condiments} // Pass the global condiments list
           onClose={() => setSelectedMeal(null)}
+          onAddToBag={handleAddToBag}
         />
       )}
+
+      {selectedBeverage && (
+        <BeverageOrderForm
+          beverage={selectedBeverage}
+          condiments={condiments} // Pass the global condiments list
+          onClose={() => setSelectedBeverage(null)}
+          onAddToBag={handleAddToBag}
+        />
+      )}
+
+      <Bag
+        open={bagOpen}
+        onClose={() => setBagOpen(false)}
+        bag={bag}
+        setBag={setBag}
+        user={user}
+      />
     </Box>
   );
 }

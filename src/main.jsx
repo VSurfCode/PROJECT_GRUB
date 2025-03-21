@@ -7,18 +7,19 @@ import './index.css'
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#fff",
+      main: "#000",
     },
     secondary: {
       main: "#fff",
     },
     background: {
       default: "#fff",
-      paper: "#ffffff", // White for cards/dialogs
+      paper: "#ffffff",
     },
     text: {
       primary: "#15171b",
       secondary: "#000",
+      tertiary: "#0fff50"
     },
   },
   typography: {

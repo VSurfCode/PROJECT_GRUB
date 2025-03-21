@@ -6,11 +6,15 @@ function useCurrentMenu() {
   const [menu, setMenu] = useState(null);
 
   useEffect(() => {
-    const docRef = doc(db, "currentMenu", "today");
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      setMenu(docSnap.exists() ? docSnap.data() : { breakfast: [], lunch: [], dinner: [] });
+    const unsub = onSnapshot(doc(db, "currentMenu", "today"), (docSnap) => {
+      setMenu(
+        docSnap.exists()
+          ? docSnap.data()
+          : { breakfast: [], lunch: [], dinner: [], beverages: [] }
+      );
     });
-    return () => unsubscribe();
+
+    return () => unsub();
   }, []);
 
   return menu;

@@ -5,62 +5,70 @@ import { db } from "../firebase";
 function useMeals(mealIds) {
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log("useMeals - mealIds:", mealIds);
     if (!mealIds || mealIds.length === 0) {
       setMeals([]);
       setLoading(false);
+      console.log("No meal IDs provided, setting meals to empty.");
       return;
     }
 
-    setLoading(true);
-    // Batch mealIds into groups of 10 (Firestore "in" query limit)
-    const batchSize = 10;
-    const batches = [];
-    for (let i = 0; i < mealIds.length; i += batchSize) {
-      batches.push(mealIds.slice(i, i + batchSize));
+    const validMealIds = mealIds.filter((id) => id && typeof id === "string");
+    if (validMealIds.length === 0) {
+      setMeals([]);
+      setLoading(false);
+      console.log("No valid meal IDs after filtering, setting meals to empty.");
+      return;
     }
 
-    const unsubscribes = [];
-    Promise.all(
-      batches.map((batch) => {
-        const q = query(collection(db, "meals"), where("__name__", "in", batch));
-        return new Promise((resolve) => {
-          const unsubscribe = onSnapshot(
-            q,
-            (snapshot) => {
-              const mealsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-              setMeals((prev) => {
-                const newMeals = [...prev];
-                mealsData.forEach((meal) => {
-                  const index = newMeals.findIndex((m) => m.id === meal.id);
-                  if (index === -1) {
-                    newMeals.push(meal);
-                  } else {
-                    newMeals[index] = meal;
-                  }
-                });
-                return newMeals;
-              });
-              resolve();
-            },
-            (err) => {
-              console.error("useMeals - Error:", err);
-              setError(err.message);
-              resolve();
-            }
-          );
-          unsubscribes.push(unsubscribe);
-        });
-      })
-    ).finally(() => setLoading(false));
+    const chunkSize = 10;
+    const chunks = [];
+    for (let i = 0; i < validMealIds.length; i += chunkSize) {
+      chunks.push(validMealIds.slice(i, i + chunkSize));
+    }
 
-    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
-  }, [mealIds]);
+    setLoading(true);
+    const unsubscribers = chunks.map((chunk, index) => {
+      const q = query(collection(db, "meals"), where("__name__", "in", chunk));
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const chunkMeals = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+            category: doc.data().category || "meal", // Default to "meal" if category is not set
+          }));
+          console.log(`Fetched meals for chunk ${index + 1}:`, chunkMeals);
 
-  return { meals, loading, error };
+          setMeals((prevMeals) => {
+            const allMeals = [...prevMeals];
+            chunkMeals.forEach((meal) => {
+              if (!allMeals.some((m) => m.id === meal.id)) {
+                allMeals.push(meal);
+              }
+            });
+            return validMealIds
+              .map((id) => allMeals.find((meal) => meal.id === id))
+              .filter((meal) => meal !== undefined);
+          });
+
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Error fetching meals:", error);
+          setMeals([]);
+          setLoading(false);
+        }
+      );
+    });
+
+    return () => {
+      unsubscribers.forEach((unsub) => unsub());
+    };
+  }, [JSON.stringify(mealIds)]);
+
+  return { meals, loading };
 }
 
 export default useMeals;

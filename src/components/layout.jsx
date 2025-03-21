@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useBag } from "../context/BagContext";
 import {
   AppBar,
   Toolbar,
@@ -7,11 +9,23 @@ import {
   Typography,
   Box,
   CircularProgress,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
 } from "@mui/material";
-import GrubGoblinLogo from '../assets/GrubGoblinLogo2.png'
+import MenuIcon from "@mui/icons-material/Menu"; // Hamburger menu icon
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
+import Bag from "../components/Bag";
+import GrubGoblinLogo from "../assets/GrubGoblinLogo2.png";
 
 function Layout({ children }) {
-  const { user, isAdmin, logout, loading } = useAuth(); // Add isAdmin
+  const { user, isAdmin, logout, loading } = useAuth();
+  const { bag } = useBag();
+  const [bagOpen, setBagOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false); // State for the Drawer
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -19,67 +33,250 @@ function Layout({ children }) {
     navigate("/login");
   };
 
+  const toggleDrawer = (open) => (event) => {
+    if (
+      event.type === "keydown" &&
+      (event.key === "Tab" || event.key === "Shift")
+    ) {
+      return;
+    }
+    setDrawerOpen(open);
+  };
+
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", bgcolor: "background.default" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          bgcolor: "background.default",
+        }}
+      >
         <CircularProgress color="secondary" />
       </Box>
     );
   }
 
+  // Navigation links for the Drawer and AppBar
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/my-orders", label: "My Orders" },
+    { to: "/suggestions", label: "Ideas" },
+    { to: "/profile", label: "Profile" },
+  ];
+
+  // Admin links (only shown if the user is an admin)
+  const adminLinks = [
+    { to: "/admin/meals", label: "Meals" },
+    { to: "/admin/menu", label: "Menu" },
+    { to: "/admin/orders", label: "Orders" },
+    { to: "/admin/suggestions", label: "Ideas" },
+  ];
+
+  // Drawer content
+  const drawerContent = (
+    <Box
+      sx={{ width: 250, bgcolor: "#2a2e33", height: "100%", color: "#ffffff" }}
+      role="presentation"
+      onClick={toggleDrawer(false)}
+      onKeyDown={toggleDrawer(false)}
+    >
+      <Box sx={{ p: 2, display: "flex", alignItems: "center" }}>
+        <img src={GrubGoblinLogo} width={50} alt="GrubGoblin Logo" />
+        <Typography variant="h6" sx={{ ml: 1 }}>
+          GrubGoblin
+        </Typography>
+      </Box>
+      <Divider sx={{ bgcolor: "#0fff50" }} />
+      <List>
+        {navLinks.map((link) => (
+          <ListItem
+            key={link.label}
+            component={NavLink}
+            to={link.to}
+            sx={{
+              color: "#ffffff",
+              "&.active": { bgcolor: "#000", color: "#fff" },
+              "&:hover": { bgcolor: "#3a3e43" },
+            }}
+          >
+            <ListItemText primary={link.label} />
+          </ListItem>
+        ))}
+        {isAdmin && (
+          <>
+            <Divider sx={{ bgcolor: "#0fff50", my: 1 }} />
+            <Typography variant="subtitle1" sx={{ px: 2, color: "#0fff50" }}>
+              Admin
+            </Typography>
+            {adminLinks.map((link) => (
+              <ListItem
+                key={link.label}
+                component={NavLink}
+                to={link.to}
+                sx={{
+                  color: "#ffffff",
+                  "&.active": { bgcolor: "#000", color: "#fff" },
+                  "&:hover": { bgcolor: "#3a3e43" },
+                }}
+              >
+                <ListItemText primary={link.label} />
+              </ListItem>
+            ))}
+          </>
+        )}
+      </List>
+    </Box>
+  );
+
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "background.default" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
       {user && (
-        <AppBar position="static" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-          <Toolbar>
-            <Box sx={{ flexGrow: 1, fontSize: "1.5rem", alignItems: "center", display: 'flex' }}>
-                <img src={GrubGoblinLogo} width={100} alt="" />
-              <Typography variant="h6">
-                GrubGoblin
-              </Typography>
-            </Box>
-            <Button color="inherit" component={NavLink} to="/" sx={{ mx: 1 }}>
-              Home
-            </Button>
-            <Button color="inherit" component={NavLink} to="/my-orders" sx={{ mx: 1 }}>
-              My Orders
-            </Button>
-            <Button color="inherit" component={NavLink} to="/suggestions" sx={{ mx: 1 }}>
-              Ideas
-            </Button>
-            <Button color="inherit" component={NavLink} to="/profile" sx={{ mx: 1 }}>
-              Profile
-            </Button>
-            {isAdmin && ( // Use isAdmin instead of user.isAdmin
-              <>
-                <Button color="inherit" component={NavLink} to="/admin/meals" sx={{ mx: 1 }}>
-                  Meals
-                </Button>
-                <Button color="inherit" component={NavLink} to="/admin/menu" sx={{ mx: 1 }}>
-                  Menu
-                </Button>
-                <Button color="inherit" component={NavLink} to="/admin/orders" sx={{ mx: 1 }}>
-                  Orders
-                </Button>
-                <Button color="inherit" component={NavLink} to="/admin/suggestions" sx={{ mx: 1 }}>
-                  Ideas
-                </Button>
-              </>
-            )}
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleLogout}
-              sx={{ mx: 1, px: 3 }}
-            >
-              Logout
-            </Button>
-          </Toolbar>
-        </AppBar>
+        <>
+          <AppBar
+            position="static"
+            sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          >
+            <Toolbar>
+              {/* Hamburger Menu Icon (visible on small screens) */}
+              <IconButton
+                color="inherit"
+                edge="start"
+                onClick={toggleDrawer(true)}
+                sx={{ display: { xs: "block", sm: "none" }, mr: 2 }}
+              >
+                <MenuIcon />
+              </IconButton>
+
+              {/* Logo */}
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  fontSize: "1.5rem",
+                  alignItems: "center",
+                  display: "flex",
+                }}
+              >
+                <img src={GrubGoblinLogo} width={100} alt="GrubGoblin Logo" />
+                <Typography variant="h6">GrubGoblin</Typography>
+              </Box>
+
+              {/* Navigation Buttons (visible on larger screens) */}
+              <Box sx={{ display: { xs: "none", sm: "flex" } }}>
+                {navLinks.map((link) => (
+                  <Button
+                    key={link.label}
+                    color="inherit"
+                    component={NavLink}
+                    to={link.to}
+                    sx={{
+                      mx: 1,
+                      "&.active": { bgcolor: "#000", color: "#fff" },
+                    }}
+                  >
+                    {link.label}
+                  </Button>
+                ))}
+                {isAdmin && (
+                  <>
+                    {adminLinks.map((link) => (
+                      <Button
+                        key={link.label}
+                        color="inherit"
+                        component={NavLink}
+                        to={link.to}
+                        sx={{
+                          mx: 1,
+                          "&.active": { bgcolor: "#000", color: "#fff" },
+                        }}
+                      >
+                        {link.label}
+                      </Button>
+                    ))}
+                  </>
+                )}
+              </Box>
+
+              {/* Bag Icon */}
+              <IconButton
+                onClick={() => setBagOpen(true)}
+                color="inherit"
+                sx={{ mx: 1, position: "relative" }}
+              >
+                <ShoppingBagIcon />
+                {bag.length > 0 && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 5,
+                      right: 5,
+                      bgcolor: "#fff",
+                      color: "#000",
+                      borderRadius: "50%",
+                      width: 20,
+                      height: 20,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                    }}
+                  >
+                    {bag.length}
+                  </Box>
+                )}
+              </IconButton>
+
+              {/* Logout Button */}
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={handleLogout}
+                sx={{ mx: 1, px: 3 }}
+              >
+                Logout
+              </Button>
+            </Toolbar>
+          </AppBar>
+
+          {/* Drawer for Mobile Navigation */}
+          <Drawer
+            anchor="left"
+            open={drawerOpen}
+            onClose={toggleDrawer(false)}
+            sx={{
+              display: { xs: "block", sm: "none" },
+              "& .MuiDrawer-paper": { boxSizing: "border-box", width: 250 },
+            }}
+          >
+            {drawerContent}
+          </Drawer>
+        </>
       )}
-      <Box component="main" sx={{ flexGrow: 1, bgcolor: "background.default", p: 0 }}>
+
+      <Box
+        component="main"
+        sx={{ flexGrow: 1, bgcolor: "background.default", p: 0 }}
+      >
         {children}
       </Box>
+
+      {/* Bag Component */}
+      {user && (
+        <Bag
+          open={bagOpen}
+          onClose={() => setBagOpen(false)}
+          user={user}
+        />
+      )}
     </Box>
   );
 }

@@ -2,12 +2,32 @@ import { useMemo } from "react";
 import useOrders from "../hooks/useOrders";
 import useMeals from "../hooks/useMeals";
 import { useAuth } from "../context/AuthContext";
-import { Typography, Box, Card, CardContent, CircularProgress } from "@mui/material";
+import {
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+} from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 function MyOrders() {
   const { user } = useAuth();
   const { orders, error: ordersError } = useOrders(user.uid);
-  const mealIds = useMemo(() => orders.map((order) => order.mealId), [orders]);
+
+  const mealIds = useMemo(() => {
+    const ids = [];
+    orders.forEach((order) => {
+      order.items.forEach((item) => {
+        ids.push(item.mealId);
+      });
+    });
+    return [...new Set(ids)];
+  }, [orders]);
+
   const { meals, loading: mealsLoading, error: mealsError } = useMeals(mealIds);
 
   if (ordersError) {
@@ -33,22 +53,87 @@ function MyOrders() {
         <Typography>No orders yet.</Typography>
       ) : (
         orders.map((order) => {
-          const meal = meals.find((m) => m.id === order.mealId);
           return (
-            <Card key={order.id} sx={{ mb: 2 }}>
+            <Card
+              key={order.id}
+              sx={{
+                mb: 2,
+                bgcolor: order.status === "completed" ? "#e0ffe0" : "#ffffff",
+                border: order.status === "completed" ? "2px solid #0fff50" : "none",
+              }}
+            >
               <CardContent>
-                <Typography variant="h6">
-                  {meal?.name || "Loading..."}
+                <Typography variant="h6" color="text.primary">
+                  Order placed on {order.timestamp?.toDate().toLocaleString() || "N/A"}
+                  {order.status === "completed" && (
+                    <CheckCircleIcon sx={{ color: "#0fff50", ml: 1, verticalAlign: "middle" }} />
+                  )}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Meal Type: {order.mealType}
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Add-ons: {order.addOns.join(", ") || "None"}
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Items:
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Time: {order.timestamp?.toDate().toLocaleString() || "N/A"}
-                </Typography>
+                <List dense>
+                  {order.items.map((item, index) => {
+                    const meal = meals.find((m) => m.id === item.mealId);
+                    const condimentQuantities = item.condimentQuantities || {}; // Fallback to empty object
+                    return (
+                      <ListItem
+                        key={index}
+                        sx={{
+                          bgcolor: "#2a2e33",
+                          mb: 1,
+                          borderRadius: 1,
+                          border: "1px solid #0fff50",
+                        }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Typography variant="h6" color="#0fff50">
+                              {meal?.name || "Loading..."}
+                            </Typography>
+                          }
+                          secondary={
+                            item.type === "meal" ? (
+                              <>
+                                <Typography variant="body2" color="#ffffff">
+                                  Quantities: {Object.entries(item.quantities)
+                                    .map(([comp, qty]) => `${comp}: ${qty}`)
+                                    .join(", ")}
+                                </Typography>
+                                <Typography variant="body2" color="#ffffff">
+                                  Condiments: {Object.entries(condimentQuantities)
+                                    .filter(([_, qty]) => qty > 0)
+                                    .map(([condiment, qty]) => `${condiment}: ${qty}`)
+                                    .join(", ") || "None"}
+                                </Typography>
+                                {item.notes && (
+                                  <Typography variant="body2" color="#ffffff">
+                                    Notes: {item.notes}
+                                  </Typography>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <Typography variant="body2" color="#ffffff">
+                                  Quantity: {item.quantity}
+                                </Typography>
+                                <Typography variant="body2" color="#ffffff">
+                                  Condiments: {Object.entries(condimentQuantities)
+                                    .filter(([_, qty]) => qty > 0)
+                                    .map(([condiment, qty]) => `${condiment}: ${qty}`)
+                                    .join(", ") || "None"}
+                                </Typography>
+                              </>
+                            )
+                          }
+                        />
+                      </ListItem>
+                    );
+                  })}
+                </List>
               </CardContent>
             </Card>
           );
