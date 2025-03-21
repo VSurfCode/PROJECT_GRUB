@@ -16,16 +16,17 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu"; // Hamburger menu icon
+import MenuIcon from "@mui/icons-material/Menu";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import Bag from "../components/Bag";
+import Notifications from "../components/Notifications"; // Import the Notifications component
 import GrubGoblinLogo from "../assets/GrubGoblinLogo2.png";
 
 function Layout({ children }) {
   const { user, isAdmin, logout, loading } = useAuth();
   const { bag } = useBag();
   const [bagOpen, setBagOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false); // State for the Drawer
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -59,7 +60,6 @@ function Layout({ children }) {
     );
   }
 
-  // Navigation links for the Drawer and AppBar
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/my-orders", label: "My Orders" },
@@ -67,7 +67,6 @@ function Layout({ children }) {
     { to: "/profile", label: "Profile" },
   ];
 
-  // Admin links (only shown if the user is an admin)
   const adminLinks = [
     { to: "/admin/meals", label: "Meals" },
     { to: "/admin/menu", label: "Menu" },
@@ -75,7 +74,6 @@ function Layout({ children }) {
     { to: "/admin/suggestions", label: "Ideas" },
   ];
 
-  // Drawer content
   const drawerContent = (
     <Box
       sx={{ width: 250, bgcolor: "#2a2e33", height: "100%", color: "#ffffff" }}
@@ -147,7 +145,6 @@ function Layout({ children }) {
             sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
           >
             <Toolbar>
-              {/* Hamburger Menu Icon (visible on small screens) */}
               <IconButton
                 color="inherit"
                 edge="start"
@@ -157,7 +154,6 @@ function Layout({ children }) {
                 <MenuIcon />
               </IconButton>
 
-              {/* Logo */}
               <Box
                 sx={{
                   flexGrow: 1,
@@ -170,7 +166,6 @@ function Layout({ children }) {
                 <Typography variant="h6">GrubGoblin</Typography>
               </Box>
 
-              {/* Navigation Buttons (visible on larger screens) */}
               <Box sx={{ display: { xs: "none", sm: "flex" } }}>
                 {navLinks.map((link) => (
                   <Button
@@ -206,7 +201,8 @@ function Layout({ children }) {
                 )}
               </Box>
 
-              {/* Bag Icon */}
+              <Notifications /> {/* Add the Notifications component */}
+
               <IconButton
                 onClick={() => setBagOpen(true)}
                 color="inherit"
@@ -235,7 +231,6 @@ function Layout({ children }) {
                 )}
               </IconButton>
 
-              {/* Logout Button */}
               <Button
                 variant="contained"
                 color="secondary"
@@ -247,7 +242,6 @@ function Layout({ children }) {
             </Toolbar>
           </AppBar>
 
-          {/* Drawer for Mobile Navigation */}
           <Drawer
             anchor="left"
             open={drawerOpen}
@@ -269,7 +263,6 @@ function Layout({ children }) {
         {children}
       </Box>
 
-      {/* Bag Component */}
       {user && (
         <Bag
           open={bagOpen}

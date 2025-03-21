@@ -16,9 +16,10 @@ import RemoveIcon from "@mui/icons-material/Remove";
 function BeverageOrderForm({ beverage, condiments, onClose, onAddToBag }) {
   const [quantity, setQuantity] = useState(1);
   const [condimentQuantities, setCondimentQuantities] = useState(
-    Object.fromEntries(
-      (condiments || []).map((condiment) => [condiment, 0])
-    )
+    Object.fromEntries((condiments || []).map((condiment) => [condiment, 0]))
+  );
+  const [addOnQuantities, setAddOnQuantities] = useState(
+    Object.fromEntries((beverage.addOns || []).map((addOn) => [addOn, 0]))
   );
 
   const handleQuantityChange = (delta) => {
@@ -32,10 +33,20 @@ function BeverageOrderForm({ beverage, condiments, onClose, onAddToBag }) {
     }));
   };
 
+  const handleAddOnQuantityChange = (addOn, delta) => {
+    setAddOnQuantities((prev) => ({
+      ...prev,
+      [addOn]: Math.max(0, (prev[addOn] || 0) + delta),
+    }));
+  };
+
   const handleAddToBag = () => {
     const selectedCondiments = Object.entries(condimentQuantities)
       .filter(([_, qty]) => qty > 0)
       .map(([condiment, _]) => condiment);
+    const selectedAddOns = Object.entries(addOnQuantities)
+      .filter(([_, qty]) => qty > 0)
+      .map(([addOn, _]) => addOn);
     const bagItem = {
       type: "beverage",
       mealId: beverage.id,
@@ -43,6 +54,8 @@ function BeverageOrderForm({ beverage, condiments, onClose, onAddToBag }) {
       quantity,
       condiments: selectedCondiments,
       condimentQuantities: condimentQuantities || {},
+      addOns: selectedAddOns,
+      addOnQuantities: addOnQuantities || {},
     };
     onAddToBag(bagItem);
     onClose();
@@ -82,6 +95,61 @@ function BeverageOrderForm({ beverage, condiments, onClose, onAddToBag }) {
         </Box>
 
         <Typography variant="h6" gutterBottom sx={{ mt: 2 }} color="#0fff50">
+          Add-Ons
+        </Typography>
+        <Typography variant="body2" color="#ffffff" sx={{ mb: 2 }}>
+          Add-ons may incur an additional charge.
+        </Typography>
+        <Grid container spacing={2}>
+          {beverage.addOns && beverage.addOns.length > 0 ? (
+            beverage.addOns.map((addOn) => (
+              <Grid item xs={6} sm={4} md={3} key={addOn}>
+                <Box
+                  sx={{
+                    bgcolor: "#ffffff",
+                    borderRadius: 1,
+                    p: 1,
+                    textAlign: "center",
+                    border: "1px solid #0fff50",
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    sx={{ mt: 1 }}
+                  >
+                    {addOn}
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", justifyContent: "center", mt: 1 }}
+                  >
+                    <IconButton
+                      onClick={() => handleAddOnQuantityChange(addOn, -1)}
+                      size="small"
+                      sx={{ color: "#0fff50" }}
+                    >
+                      <RemoveIcon />
+                    </IconButton>
+                    <Typography sx={{ mx: 1, color: "text.primary" }}>
+                      {addOnQuantities[addOn]}
+                    </Typography>
+                    <IconButton
+                      onClick={() => handleAddOnQuantityChange(addOn, 1)}
+                      size="small"
+                      sx={{ color: "#0fff50" }}
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </Grid>
+            ))
+          ) : (
+            <Typography color="#ffffff">No add-ons available.</Typography>
+          )}
+        </Grid>
+
+        <Typography variant="h6" gutterBottom sx={{ mt: 2 }} color="#0fff50">
           Condiments
         </Typography>
         <Typography variant="body2" color="#ffffff" sx={{ mb: 2 }}>
@@ -106,10 +174,21 @@ function BeverageOrderForm({ beverage, condiments, onClose, onAddToBag }) {
                     border: "1px solid #0fff50",
                   }}
                 >
-                  <Typography variant="body2" color="text.primary" sx={{ mt: 1 }}>
+                  <img
+                    src="https://via.placeholder.com/50"
+                    alt={condiment}
+                    style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                  />
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    sx={{ mt: 1 }}
+                  >
                     {condiment}
                   </Typography>
-                  <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+                  <Box
+                    sx={{ display: "flex", justifyContent: "center", mt: 1 }}
+                  >
                     <IconButton
                       onClick={() => handleCondimentQuantityChange(condiment, -1)}
                       size="small"

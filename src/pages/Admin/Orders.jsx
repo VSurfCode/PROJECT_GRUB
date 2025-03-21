@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useOrders from "../../hooks/useOrders";
 import useMeals from "../../hooks/useMeals";
 import useUsers from "../../hooks/useUsers";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, addDoc, collection } from "firebase/firestore";
 import { db } from "../../firebase";
 import {
   Typography,
@@ -17,9 +17,11 @@ import {
   List,
   ListItem,
   ListItemText,
+  Button,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 
 function Orders() {
   const { orders, error: ordersError } = useOrders();
@@ -40,10 +42,36 @@ function Orders() {
   const { meals, loading: mealsLoading, error: mealsError } = useMeals(mealIds);
   const { users, loading: usersLoading, error: usersError } = useUsers(userIds);
 
-  const handleCompleteOrder = async (orderId, currentStatus) => {
+  const handleStartOrder = async (orderId, userId) => {
     try {
       const orderRef = doc(db, "orders", orderId);
-      await updateDoc(orderRef, { status: currentStatus === "pending" ? "completed" : "pending" });
+      await updateDoc(orderRef, { status: "started" });
+
+      await addDoc(collection(db, "notifications"), {
+        userId: userId,
+        message: "Your order has been started!",
+        timestamp: new Date(),
+        read: false,
+      });
+    } catch (error) {
+      console.error("Error starting order:", error);
+    }
+  };
+
+  const handleCompleteOrder = async (orderId, userId, currentStatus) => {
+    try {
+      const orderRef = doc(db, "orders", orderId);
+      const newStatus = currentStatus === "pending" || currentStatus === "started" ? "completed" : "pending";
+      await updateDoc(orderRef, { status: newStatus });
+
+      if (newStatus === "completed") {
+        await addDoc(collection(db, "notifications"), {
+          userId: userId,
+          message: "Your order is completed and ready for pickup!",
+          timestamp: new Date(),
+          read: false,
+        });
+      }
     } catch (error) {
       console.error("Error updating order:", error);
     }
@@ -90,8 +118,8 @@ function Orders() {
               key={order.id}
               sx={{
                 mb: 2,
-                bgcolor: order.status === "completed" ? "#e0ffe0" : "#ffffff",
-                border: order.status === "completed" ? "2px solid #0fff50" : "none",
+                bgcolor: order.status === "completed" ? "#e0ffe0" : order.status === "started" ? "#fff0e0" : "#ffffff",
+                border: order.status === "completed" ? "2px solid #0fff50" : order.status === "started" ? "2px solid #ffa500" : "none",
                 cursor: "pointer",
               }}
               onClick={() => navigate(`/admin/orders/${order.id}`)}
@@ -103,6 +131,9 @@ function Orders() {
                     {order.status === "completed" && (
                       <CheckCircleIcon sx={{ color: "#0fff50", ml: 1, verticalAlign: "middle" }} />
                     )}
+                    {order.status === "started" && (
+                      <PlayArrowIcon sx={{ color: "#ffa500", ml: 1, verticalAlign: "middle" }} />
+                    )}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Time: {order.timestamp?.toDate().toLocaleString() || "N/A"}
@@ -113,7 +144,8 @@ function Orders() {
                   <List dense>
                     {order.items.map((item, index) => {
                       const meal = meals.find((m) => m.id === item.mealId);
-                      const condimentQuantities = item.condimentQuantities || {}; // Fallback to empty object
+                      const condimentQuantities = item.condimentQuantities || {};
+                      const addOnQuantities = item.addOnQuantities || {};
                       return (
                         <ListItem key={index}>
                           <ListItemText
@@ -122,13 +154,23 @@ function Orders() {
                               item.type === "meal"
                                 ? `Quantities: ${Object.entries(item.quantities)
                                     .map(([comp, qty]) => `${comp}: ${qty}`)
-                                    .join(", ")} | Condiments: ${
+                                    .join(", ")} | Add-Ons: ${
+                                    Object.entries(addOnQuantities)
+                                      .filter(([_, qty]) => qty > 0)
+                                      .map(([addOn, qty]) => `${addOn}: ${qty}`)
+                                      .join(", ") || "None"
+                                  } | Condiments: ${
                                     Object.entries(condimentQuantities)
                                       .filter(([_, qty]) => qty > 0)
                                       .map(([condiment, qty]) => `${condiment}: ${qty}`)
                                       .join(", ") || "None"
                                   }${item.notes ? ` | Notes: ${item.notes}` : ""}`
-                                : `Quantity: ${item.quantity} | Condiments: ${
+                                : `Quantity: ${item.quantity} | Add-Ons: ${
+                                    Object.entries(addOnQuantities)
+                                      .filter(([_, qty]) => qty > 0)
+                                      .map(([addOn, qty]) => `${addOn}: ${qty}`)
+                                      .join(", ") || "None"
+                                  } | Condiments: ${
                                     Object.entries(condimentQuantities)
                                       .filter(([_, qty]) => qty > 0)
                                       .map(([condiment, qty]) => `${condiment}: ${qty}`)
@@ -142,13 +184,27 @@ function Orders() {
                   </List>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
+                  {order.status === "pending" && (
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      startIcon={<PlayArrowIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartOrder(order.id, order.userId);
+                      }}
+                      sx={{ mr: 1 }}
+                    >
+                      Start Order
+                    </Button>
+                  )}
                   <FormControlLabel
                     control={
                       <Checkbox
                         checked={order.status === "completed"}
                         onChange={(e) => {
                           e.stopPropagation();
-                          handleCompleteOrder(order.id, order.status);
+                          handleCompleteOrder(order.id, order.userId, order.status);
                         }}
                         sx={{ color: "#ffc523", "&.Mui-checked": { color: "#0fff50" } }}
                       />

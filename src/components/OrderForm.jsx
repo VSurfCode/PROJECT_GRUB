@@ -39,9 +39,10 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
     Object.fromEntries((meal.components || []).map((comp) => [comp, 1]))
   );
   const [condimentQuantities, setCondimentQuantities] = useState(
-    Object.fromEntries(
-      (condiments || []).map((condiment) => [condiment, 0]) // Use the global condiments prop
-    )
+    Object.fromEntries((condiments || []).map((condiment) => [condiment, 0]))
+  );
+  const [addOnQuantities, setAddOnQuantities] = useState(
+    Object.fromEntries((meal.addOns || []).map((addOn) => [addOn, 0])) // Initialize add-on quantities
   );
   const [notes, setNotes] = useState("");
 
@@ -59,10 +60,20 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
     }));
   };
 
+  const handleAddOnQuantityChange = (addOn, delta) => {
+    setAddOnQuantities((prev) => ({
+      ...prev,
+      [addOn]: Math.max(0, (prev[addOn] || 0) + delta),
+    }));
+  };
+
   const handleAddToBag = () => {
     const selectedCondiments = Object.entries(condimentQuantities)
       .filter(([_, qty]) => qty > 0)
       .map(([condiment, _]) => condiment);
+    const selectedAddOns = Object.entries(addOnQuantities)
+      .filter(([_, qty]) => qty > 0)
+      .map(([addOn, _]) => addOn);
     const bagItem = {
       type: "meal",
       mealId: meal.id,
@@ -71,6 +82,8 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
       quantities,
       condiments: selectedCondiments,
       condimentQuantities: condimentQuantities || {},
+      addOns: selectedAddOns, // Include selected add-ons
+      addOnQuantities: addOnQuantities || {}, // Include add-on quantities
       notes,
     };
     onAddToBag(bagItem);
@@ -125,6 +138,61 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
         )}
 
         <Typography variant="h6" gutterBottom sx={{ mt: 2 }} color="#0fff50">
+          Add-Ons
+        </Typography>
+        <Typography variant="body2" color="#ffffff" sx={{ mb: 2 }}>
+          Add-ons may incur an additional charge.
+        </Typography>
+        <Grid container spacing={2}>
+          {meal.addOns && meal.addOns.length > 0 ? (
+            meal.addOns.map((addOn) => (
+              <Grid item xs={6} sm={4} md={3} key={addOn}>
+                <Box
+                  sx={{
+                    bgcolor: "#ffffff",
+                    borderRadius: 1,
+                    p: 1,
+                    textAlign: "center",
+                    border: "1px solid #0fff50",
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    sx={{ mt: 1 }}
+                  >
+                    {addOn}
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", justifyContent: "center", mt: 1 }}
+                  >
+                    <IconButton
+                      onClick={() => handleAddOnQuantityChange(addOn, -1)}
+                      size="small"
+                      sx={{ color: "#0fff50" }}
+                    >
+                      <RemoveIcon />
+                    </IconButton>
+                    <Typography sx={{ mx: 1, color: "text.primary" }}>
+                      {addOnQuantities[addOn]}
+                    </Typography>
+                    <IconButton
+                      onClick={() => handleAddOnQuantityChange(addOn, 1)}
+                      size="small"
+                      sx={{ color: "#0fff50" }}
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </Grid>
+            ))
+          ) : (
+            <Typography color="#ffffff">No add-ons available.</Typography>
+          )}
+        </Grid>
+
+        <Typography variant="h6" gutterBottom sx={{ mt: 2 }} color="#0fff50">
           Condiments
         </Typography>
         <Typography variant="body2" color="#ffffff" sx={{ mb: 2 }}>
@@ -137,7 +205,7 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
           )}
         </Typography>
         <Grid container spacing={2}>
-          {condiments && condiments.length > 0 ? ( // Use the global condiments prop
+          {condiments && condiments.length > 0 ? (
             condiments.map((condiment) => (
               <Grid item xs={6} sm={4} md={3} key={condiment}>
                 <Box
@@ -149,10 +217,16 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
                     border: "1px solid #0fff50",
                   }}
                 >
-                  <Typography variant="body2" color="text.primary" sx={{ mt: 1 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    sx={{ mt: 1 }}
+                  >
                     {condiment}
                   </Typography>
-                  <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+                  <Box
+                    sx={{ display: "flex", justifyContent: "center", mt: 1 }}
+                  >
                     <IconButton
                       onClick={() => handleCondimentQuantityChange(condiment, -1)}
                       size="small"

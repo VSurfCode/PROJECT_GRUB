@@ -935,7 +935,7 @@ function MealManagement() {
                         edge="end"
                         onClick={() => openDeleteDialog(meal)}
                       >
-                        <DeleteIcon color="secondary" />
+                        <DeleteIcon color="primary" />
                       </IconButton>
                     </>
                   }

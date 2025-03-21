@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import MyOrders from "./pages/MyOrders";
+import MyOrderDetails from "./components/MyOrderDetails";
 import Suggestions from "./pages/Suggestions";
 import Profile from "./pages/Profile";
 import MealManagement from "./pages/Admin/MealManagement";
@@ -37,6 +38,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <MyOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-orders/:orderId"
+                element={
+                  <ProtectedRoute>
+                    <MyOrderDetails />
                   </ProtectedRoute>
                 }
               />

@@ -1,7 +1,8 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import useOrders from "../hooks/useOrders";
 import useMeals from "../hooks/useMeals";
-import { useAuth } from "../context/AuthContext";
 import {
   Typography,
   Box,
@@ -13,10 +14,12 @@ import {
   ListItemText,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 
 function MyOrders() {
   const { user } = useAuth();
-  const { orders, error: ordersError } = useOrders(user.uid);
+  const { orders, error: ordersError } = useOrders(user?.uid);
+  const navigate = useNavigate();
 
   const mealIds = useMemo(() => {
     const ids = [];
@@ -52,92 +55,80 @@ function MyOrders() {
       {orders.length === 0 ? (
         <Typography>No orders yet.</Typography>
       ) : (
-        orders.map((order) => {
-          return (
-            <Card
-              key={order.id}
-              sx={{
-                mb: 2,
-                bgcolor: order.status === "completed" ? "#e0ffe0" : "#ffffff",
-                border: order.status === "completed" ? "2px solid #0fff50" : "none",
-              }}
-            >
-              <CardContent>
-                <Typography variant="h6" color="text.primary">
-                  Order placed on {order.timestamp?.toDate().toLocaleString() || "N/A"}
-                  {order.status === "completed" && (
-                    <CheckCircleIcon sx={{ color: "#0fff50", ml: 1, verticalAlign: "middle" }} />
-                  )}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Items:
-                </Typography>
-                <List dense>
-                  {order.items.map((item, index) => {
-                    const meal = meals.find((m) => m.id === item.mealId);
-                    const condimentQuantities = item.condimentQuantities || {}; // Fallback to empty object
-                    return (
-                      <ListItem
-                        key={index}
-                        sx={{
-                          bgcolor: "#2a2e33",
-                          mb: 1,
-                          borderRadius: 1,
-                          border: "1px solid #0fff50",
-                        }}
-                      >
-                        <ListItemText
-                          primary={
-                            <Typography variant="h6" color="#0fff50">
-                              {meal?.name || "Loading..."}
-                            </Typography>
-                          }
-                          secondary={
-                            item.type === "meal" ? (
-                              <>
-                                <Typography variant="body2" color="#ffffff">
-                                  Quantities: {Object.entries(item.quantities)
-                                    .map(([comp, qty]) => `${comp}: ${qty}`)
-                                    .join(", ")}
-                                </Typography>
-                                <Typography variant="body2" color="#ffffff">
-                                  Condiments: {Object.entries(condimentQuantities)
-                                    .filter(([_, qty]) => qty > 0)
-                                    .map(([condiment, qty]) => `${condiment}: ${qty}`)
-                                    .join(", ") || "None"}
-                                </Typography>
-                                {item.notes && (
-                                  <Typography variant="body2" color="#ffffff">
-                                    Notes: {item.notes}
-                                  </Typography>
-                                )}
-                              </>
-                            ) : (
-                              <>
-                                <Typography variant="body2" color="#ffffff">
-                                  Quantity: {item.quantity}
-                                </Typography>
-                                <Typography variant="body2" color="#ffffff">
-                                  Condiments: {Object.entries(condimentQuantities)
-                                    .filter(([_, qty]) => qty > 0)
-                                    .map(([condiment, qty]) => `${condiment}: ${qty}`)
-                                    .join(", ") || "None"}
-                                </Typography>
-                              </>
-                            )
-                          }
-                        />
-                      </ListItem>
-                    );
-                  })}
-                </List>
-              </CardContent>
-            </Card>
-          );
-        })
+        orders.map((order) => (
+          <Card
+            key={order.id}
+            sx={{
+              mb: 2,
+              bgcolor: order.status === "completed" ? "#e0ffe0" : order.status === "started" ? "#fff0e0" : "#ffffff",
+              border: order.status === "completed" ? "2px solid #0fff50" : order.status === "started" ? "2px solid #ffa500" : "none",
+              cursor: "pointer",
+            }}
+            onClick={() => navigate(`/my-orders/${order.id}`)}
+          >
+            <CardContent>
+              <Typography variant="h6">
+                Order #{order.id}
+                {order.status === "completed" && (
+                  <CheckCircleIcon sx={{ color: "#0fff50", ml: 1, verticalAlign: "middle" }} />
+                )}
+                {order.status === "started" && (
+                  <PlayArrowIcon sx={{ color: "#ffa500", ml: 1, verticalAlign: "middle" }} />
+                )}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Time: {order.timestamp?.toDate().toLocaleString() || "N/A"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Items:
+              </Typography>
+              <List dense>
+                {order.items.map((item, index) => {
+                  const meal = meals.find((m) => m.id === item.mealId);
+                  const condimentQuantities = item.condimentQuantities || {};
+                  const addOnQuantities = item.addOnQuantities || {};
+                  return (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={meal?.name || "Loading..."}
+                        secondary={
+                          item.type === "meal"
+                            ? `Quantities: ${Object.entries(item.quantities)
+                                .map(([comp, qty]) => `${comp}: ${qty}`)
+                                .join(", ")} | Add-Ons: ${
+                                Object.entries(addOnQuantities)
+                                  .filter(([_, qty]) => qty > 0)
+                                  .map(([addOn, qty]) => `${addOn}: ${qty}`)
+                                  .join(", ") || "None"
+                              } | Condiments: ${
+                                Object.entries(condimentQuantities)
+                                  .filter(([_, qty]) => qty > 0)
+                                  .map(([condiment, qty]) => `${condiment}: ${qty}`)
+                                  .join(", ") || "None"
+                              }${item.notes ? ` | Notes: ${item.notes}` : ""}`
+                            : `Quantity: ${item.quantity} | Add-Ons: ${
+                                Object.entries(addOnQuantities)
+                                  .filter(([_, qty]) => qty > 0)
+                                  .map(([addOn, qty]) => `${addOn}: ${qty}`)
+                                  .join(", ") || "None"
+                              } | Condiments: ${
+                                Object.entries(condimentQuantities)
+                                  .filter(([_, qty]) => qty > 0)
+                                  .map(([condiment, qty]) => `${condiment}: ${qty}`)
+                                  .join(", ") || "None"
+                              }`
+                        }
+                      />
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </CardContent>
+          </Card>
+        ))
       )}
     </Box>
   );
