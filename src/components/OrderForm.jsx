@@ -42,7 +42,7 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
     Object.fromEntries((condiments || []).map((condiment) => [condiment, 0]))
   );
   const [addOnQuantities, setAddOnQuantities] = useState(
-    Object.fromEntries((meal.addOns || []).map((addOn) => [addOn, 0])) // Initialize add-on quantities
+    Object.fromEntries((meal.addOns || []).map((addOn) => [addOn, 0]))
   );
   const [notes, setNotes] = useState("");
 
@@ -82,8 +82,8 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
       quantities,
       condiments: selectedCondiments,
       condimentQuantities: condimentQuantities || {},
-      addOns: selectedAddOns, // Include selected add-ons
-      addOnQuantities: addOnQuantities || {}, // Include add-on quantities
+      addOns: selectedAddOns,
+      addOnQuantities: addOnQuantities || {},
       notes,
     };
     onAddToBag(bagItem);
@@ -95,6 +95,10 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
     0
   );
   const freeCondimentLimit = 1;
+
+  // Check if the order is valid: at least one component should have a quantity greater than 0
+  // You can adjust this logic based on your requirements
+  const isOrderValid = Object.values(quantities).some((qty) => qty > 0);
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md">
@@ -280,7 +284,7 @@ function OrderForm({ meal, mealType, condiments, onClose, onAddToBag }) {
           onClick={handleAddToBag}
           variant="contained"
           sx={{ bgcolor: "#0fff50", color: "#000000" }}
-          disabled={Object.values(quantities).some((qty) => qty === 0)}
+          disabled={!isOrderValid} // Only disable if the order is invalid
         >
           Add to Bag
         </Button>
